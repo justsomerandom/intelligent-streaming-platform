@@ -1,0 +1,29 @@
+services:
+  video-processor:
+    build: 
+      context: .
+      dockerfile: dockerfiles/Dockerfile.processor
+    container_name: video-processor
+    ports:
+      - "8554:8554"
+      - "8556:8556"
+
+  video-api:
+    build: 
+      context: .
+      dockerfile: dockerfiles/Dockerfile.api
+    container_name: video-api
+    ports:
+      - "8000:8000"
+    depends_on:
+      - video-processor
+
+  video-client:
+    build: 
+      context: .
+      dockerfile: dockerfiles/Dockerfile.client
+    container_name: video-client
+    ports:
+      - "8080:80"
+    depends_on:
+      - video-api
