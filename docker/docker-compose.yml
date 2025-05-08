@@ -1,24 +1,10 @@
 services:
   video-ingestion:
-    image: video-ingestion:latest
-    container_name: video-ingestion
+    image: video-processor:latest
+    container_name: video-processor
     ports:
       - "8554:8554"
-
-  video-analytics:
-    image: video-analytics:latest
-    container_name: video-analytics
-    depends_on:
-      - video-ingestion
-
-  video-streaming:
-    image: video-streaming:latest
-    container_name: video-streaming
-    ports:
       - "8556:8556"
-    depends_on:
-      - video-ingestion
-      - video-analytics
 
   video-api:
     image: video-api:latest
@@ -26,9 +12,7 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - video-ingestion
-      - video-analytics
-      - video-streaming
+      - video-processor
 
   video-client:
     image: video-client:latest
@@ -37,4 +21,3 @@ services:
       - "8080:80"
     depends_on:
       - video-api
-      - video-streaming
