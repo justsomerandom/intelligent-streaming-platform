@@ -1,11 +1,12 @@
 # Dockerfile for FastAPI (Control API)
 FROM python:3.13-alpine
 
-# Install dependencies
-RUN pip install fastapi uvicorn pydantic requests
-
 # Set working directory
 WORKDIR /app
+
+# Install dependencies
+COPY docker/requirements/requirements.api /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
 
 # Copy API source code
 COPY src/api/main.py /app/main.py
