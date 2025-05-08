@@ -1,0 +1,55 @@
+
+services:
+  video-ingestion:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.ingestion
+    container_name: video-ingestion
+    ports:
+      - "8554:8554"
+
+  video-analytics:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.analytics
+    container_name: video-analytics
+    depends_on:
+      - video-ingestion
+
+  video-streaming:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.streaming
+    container_name: video-streaming
+    ports:
+      - "8556:8556"
+    depends_on:
+      - video-ingestion
+      - video-analytics
+
+  video-api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
+    container_name: video-api
+    ports:
+      - "8000:8000"
+    depends_on:
+      - video-ingestion
+      - video-analytics
+      - video-streaming
+
+  mqtt-broker:
+    image: eclipse-mosquitto
+    container_name: mqtt-broker
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+
+  video-client:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.client
+    container_name: video-client
+    ports:
+      - "8080:80"

@@ -1,0 +1,20 @@
+# Dockerfile for Analytics (YOLOv5 + OpenCV)
+FROM python:3.13-slim
+
+# Install dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg libsm6 libxext6 libgl1-mesa-glx \
+    && apt-get clean
+
+# Set working directory
+WORKDIR /app
+
+# Install Python dependencies
+COPY docker/requirements.analytics /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
+
+# Copy analytics script
+COPY src/analytics/analytics.py /app/analytics.py
+
+# Command to run the analytics script
+CMD ["python3", "/app/analytics.py"]

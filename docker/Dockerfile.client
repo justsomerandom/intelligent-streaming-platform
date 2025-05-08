@@ -1,0 +1,5 @@
+# Dockerfile for Video Stream Client (Nginx)
+FROM nginx:alpine
+
+# Copy client files to Nginx
+COPY src/client/index.html /usr/share/nginx/html/index.html

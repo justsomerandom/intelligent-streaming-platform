@@ -1,0 +1,23 @@
+# Dockerfile for Ingestion (GStreamer with RTSP)
+FROM debian:bookworm-slim
+
+# Install GStreamer and Python (Minimal)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gstreamer1.0-tools \
+    gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-ugly \
+    gstreamer1.0-libav \
+    python3 \
+    python3-pip \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy the ingestion script
+COPY src/ingestion/ingestion.py /app/ingestion.py
+
+# Command to run the ingestion script
+CMD ["python3", "/app/ingestion.py"]

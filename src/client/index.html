@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Video Stream Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        #streams {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+        .stream {
+            background-color: #ffffff;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            width: 400px;
+            text-align: center;
+        }
+        video {
+            width: 100%;
+            height: 250px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            margin-top: 10px;
+            padding: 8px 12px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Intelligent Video Stream Viewer</h1>
+<div id="streams">
+    <div class="stream">
+        <h2>Raw Stream (Camera 0)</h2>
+        <video id="raw_camera0" autoplay controls muted>
+            <source src="rtsp://localhost:8556/raw_camera0" type="application/x-rtsp">
+            Your browser does not support RTSP video.
+        </video>
+    </div>
+
+    <div class="stream">
+        <h2>Annotated Stream (Camera 0)</h2>
+        <video id="annotated_camera0" autoplay controls muted>
+            <source src="rtsp://localhost:8556/annotated_camera0" type="application/x-rtsp">
+            Your browser does not support RTSP video.
+        </video>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Add more streams dynamically if needed
+        const streams = [
+            { id: "raw_camera0", url: "rtsp://localhost:8556/raw_camera0" },
+            { id: "annotated_camera0", url: "rtsp://localhost:8556/annotated_camera0" }
+        ];
+
+        streams.forEach(stream => {
+            const video = document.getElementById(stream.id);
+            if (video) {
+                video.src = stream.url;
+            }
+        });
+    });
+</script>
+
+</body>
+</html>
