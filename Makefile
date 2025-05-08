@@ -1,38 +1,38 @@
 # Build all images using Docker Bake
 .PHONY: build
 build:
-	docker buildx bake
+	docker buildx bake --load
 
 # Build specific images
 .PHONY: build-ingestion
 build-ingestion:
-	docker buildx bake video-ingestion
+	docker buildx bake video-ingestion --load
 
 .PHONY: build-analytics
 build-analytics:
-	docker buildx bake video-analytics
+	docker buildx bake video-analytics --load
 
 .PHONY: build-streaming
 build-streaming:
-	docker buildx bake video-streaming
+	docker buildx bake video-streaming --load
 
 .PHONY: build-api
 build-api:
-	docker buildx bake video-api
+	docker buildx bake video-api --load
 
 .PHONY: build-client
 build-client:
-	docker buildx bake video-client
+	docker buildx bake video-client --load
 
 # Run all services using Docker Compose
 .PHONY: run
 run:
-	docker-compose up -d
+	docker-compose -f docker/docker-compose.yml up -d 
 
 # Stop all running services
 .PHONY: stop
 stop:
-	docker-compose down
+	docker-compose -f docker/docker-compose.yml down
 
 # Clean up dangling images and unused resources
 .PHONY: clean
