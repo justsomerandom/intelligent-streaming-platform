@@ -1,25 +1,20 @@
+version: '3.8'
 
 services:
   video-ingestion:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.ingestion
+    image: video-ingestion:latest
     container_name: video-ingestion
     ports:
       - "8554:8554"
 
   video-analytics:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.analytics
+    image: video-analytics:latest
     container_name: video-analytics
     depends_on:
       - video-ingestion
 
   video-streaming:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.streaming
+    image: video-streaming:latest
     container_name: video-streaming
     ports:
       - "8556:8556"
@@ -28,9 +23,7 @@ services:
       - video-analytics
 
   video-api:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.api
+    image: video-api:latest
     container_name: video-api
     ports:
       - "8000:8000"
@@ -39,17 +32,11 @@ services:
       - video-analytics
       - video-streaming
 
-  mqtt-broker:
-    image: eclipse-mosquitto
-    container_name: mqtt-broker
-    ports:
-      - "1883:1883"
-      - "9001:9001"
-
   video-client:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.client
+    image: video-client:latest
     container_name: video-client
     ports:
       - "8080:80"
+    depends_on:
+      - video-api
+      - video-streaming
