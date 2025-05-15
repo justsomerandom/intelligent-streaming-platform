@@ -46,9 +46,12 @@ build-client:
 # Run all services using Docker Compose
 .PHONY: up
 up:
-	if [ $(shell docker-compose -f docker/docker-compose.build.yml images -q) ]; then \
+	@IMAGES=$$(docker-compose -f docker/docker-compose.build.yml images -q); \
+	if [ -n "$$IMAGES" ]; then \
+		echo "Using built containers"; \
 		docker-compose -f docker/docker-compose.build.yml up -d; \
 	else \
+		echo "Using baked images"; \
 		docker-compose -f docker/docker-compose.yml up -d; \
 	fi
 
@@ -61,6 +64,16 @@ upx:
 .PHONY: down
 down:
 	docker-compose -f docker/docker-compose.yml down
+
+# Remove all containers, images, and volumes (but not baked images)
+.PHONY: clean
+clean:
+	docker-compose -f docker/docker-compose.build.yml down --rmi all --volumes --remove-orphans
+
+# Remove all containers, images, and volumes (including baked images)
+.PHONY: purge
+purge:
+	docker-compose -f docker/docker-compose.yml down --rmi all --volumes --remove-orphans
 
 # Install npm dependencies locally
 .PHONY: npm-dep

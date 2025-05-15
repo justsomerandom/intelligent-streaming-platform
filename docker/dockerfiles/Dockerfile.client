@@ -1,4 +1,4 @@
-FROM node:18-alpine
+FROM node:23-alpine
 
 # Set working directory
 WORKDIR /app
@@ -17,4 +17,4 @@ COPY src/client .
 EXPOSE 5173
 
 # Command to run the application
-CMD ["npm", "run", "dev"]
+CMD ["npm", "run", "--" , "--host" , "dev"]
