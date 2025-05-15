@@ -1,29 +1,56 @@
 services:
   video-processor:
+    mem_limit: 1g
+    mem_reservation: 512m
     build: 
       context: ..
       dockerfile: docker/dockerfiles/Dockerfile.processor
     container_name: video-processor
+    image: video-processor:latest
+    volumes:
+      - ./video-processor:/app
+      - /tmp:/tmp
     ports:
       - "8554:8554"
       - "8556:8556"
+    networks:
+      - video-net
 
   video-api:
+    mem_limit: 512m
+    mem_reservation: 256m
     build: 
       context: ..
       dockerfile: docker/dockerfiles/Dockerfile.api
     container_name: video-api
+    image: video-api:latest
+    volumes:
+      - ./video-api:/app
     ports:
       - "8000:8000"
     depends_on:
       - video-processor
+    networks:
+      - video-net
 
   video-client:
+    mem_limit: 512m
+    mem_reservation: 256m
     build: 
       context: ..
       dockerfile: docker/dockerfiles/Dockerfile.client
     container_name: video-client
+    image: video-client:latest
+    volumes:
+      - ./video-client:/app
     ports:
       - "5173:5173"
     depends_on:
       - video-api
+    networks:
+      - video-net
+
+networks:
+  video-net:
+    name: video-net
+    driver: bridge

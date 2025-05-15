@@ -15,15 +15,27 @@ help:
 	@echo "  make bake-api       Build API image using Docker Bake"
 	@echo "  make bake-client    Build client image using Docker Bake"
 	@echo "  make up            Run all services using Docker Compose"
-	@echo "  make upx           Force services to use baked images"
 	@echo "  make down          Stop all running services"
 	@echo "  make help          Show this help message"
 	@echo ""
 
-# Build containers directly using Docker Compose
+# Build images using Docker Compose
 .PHONY: build
 build:
 	docker-compose -f docker/docker-compose.build.yml build
+
+# Build specific images
+.PHONY: build-processor
+build-processor:
+	docker-compose -f docker/docker-compose.build.yml build $(PROCESSOR)
+
+.PHONY: build-api
+build-api:
+	docker-compose -f docker/docker-compose.build.yml build $(API)
+
+.PHONY: build-client
+build-client:
+	docker-compose -f docker/docker-compose.build.yml build $(CLIENT)
 
 # Build all images using Docker Bake
 .PHONY: bake
@@ -32,32 +44,20 @@ bake:
 
 # Bake specific images
 .PHONY: bake-processor
-build-processor:
+bake-processor:
 	docker buildx bake --file docker/docker-bake.hcl $(PROCESSOR) --load
 
 .PHONY: bake-api
-build-api:
+bake-api:
 	docker buildx bake --file docker/docker-bake.hcl $(API) --load
 
 .PHONY: bake-client
-build-client:
+bake-client:
 	docker buildx bake --file docker/docker-bake.hcl $(CLIENT) --load
 
 # Run all services using Docker Compose
 .PHONY: up
 up:
-	@IMAGES=$$(docker-compose -f docker/docker-compose.build.yml images -q); \
-	if [ -n "$$IMAGES" ]; then \
-		echo "Using built containers"; \
-		docker-compose -f docker/docker-compose.build.yml up -d; \
-	else \
-		echo "Using baked images"; \
-		docker-compose -f docker/docker-compose.yml up -d; \
-	fi
-
-# Force services to use baked images
-.PHONY: upx
-upx:
 	docker-compose -f docker/docker-compose.yml up -d
 
 # Stop all running services
@@ -65,15 +65,23 @@ upx:
 down:
 	docker-compose -f docker/docker-compose.yml down
 
-# Remove all containers, images, and volumes (but not baked images)
+# Remove all containers, images, and volumes
 .PHONY: clean
 clean:
-	docker-compose -f docker/docker-compose.build.yml down --rmi all --volumes --remove-orphans
-
-# Remove all containers, images, and volumes (including baked images)
-.PHONY: purge
-purge:
 	docker-compose -f docker/docker-compose.yml down --rmi all --volumes --remove-orphans
+
+# Check built images and running containers
+.PHONY: status
+status:
+	@echo "Built images:"
+	@docker images | head -n 1
+	@docker images | grep -w "^$(API)"
+	@docker images | grep -w "^$(PROCESSOR)"
+	@docker images | grep -w "^$(CLIENT)"
+	@echo ""
+	@echo "Running containers:"
+	@docker ps --format "table {{.ID}}\t{{.Image}}\t{{.Names}}"
+	@echo ""
 
 # Install npm dependencies locally
 .PHONY: npm-dep
