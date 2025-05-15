@@ -28,7 +28,7 @@ services:
     image: video-client:latest
     container_name: video-client
     ports:
-      - "8080:80"
+      - "5173:5173"
     depends_on:
       - video-api
     networks:
