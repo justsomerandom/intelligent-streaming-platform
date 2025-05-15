@@ -1,16 +1,9 @@
 import subprocess
 
-# Define input streams (raw and annotated)
-streams = {
-    "raw_camera0": "rtsp://video-ingestion:8554/camera0",
-    "annotated_camera0": "rtsp://video-analytics:8555/annotated_camera0"
-}
-
-# Start streaming each stream
-for name, url in streams.items():
+def start_stream(name, src_url):
     command = [
         "gst-launch-1.0",
-        "rtspsrc", f"location={url}",
+        "rtspsrc", f"location={src_url}",
         "!", "rtph264depay", 
         "!", "h264parse",
         "!", "rtph264pay", "pt=96",

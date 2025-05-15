@@ -1,25 +1,26 @@
 import cv2
-import torch
-import numpy as np
+import subprocess
+from threading import Event
 from ultralytics import YOLO
+
+# Initialize a variable to control streaming access
+url_lock = None
+url_unlock = Event()
 
 # Load the YOLOv5 Tiny model
 model = YOLO("yolov5n.pt")
 
-# List of RTSP streams (from Ingestion)
-rtsp_streams = [
-    "rtsp://video-ingestion:8554/camera0",
-    "rtsp://video-ingestion:8554/camera1",
-    "rtsp://video-ingestion:8554/camera2"
-]
+# Base RTSP URL
+rtsp_base_url = "rtsp://0.0.0.0:8554/"
 
 # Function to process and annotate frames
-def process_stream(stream_url):
+async def process_stream(stream_url):
     cap = cv2.VideoCapture(stream_url)
     if not cap.isOpened():
         print(f"Failed to connect to {stream_url}")
         return
 
+    first_frame = True
     while True:
         ret, frame = cap.read()
         if not ret:
@@ -30,12 +31,29 @@ def process_stream(stream_url):
         results = model(frame)
         annotated_frame = results.render()[0]  # Get the annotated frame
 
-        # Send the annotated frame to Streaming (TODO: Add IPC here)
-        # (For now, save it locally for testing)
-        cv2.imwrite(f"annotated_{stream_url.split('/')[-1]}.jpg", annotated_frame)
+        # Stream the annotated frame
+        url = f"{rtsp_base_url}{stream_url.split('/')[-1]}"
+        command = [
+            "gst-launch-1.0",
+            "appsrc",
+            "!", "videoconvert",
+            "!", "x264enc", "tune=zerolatency",
+            "!", "rtph264pay", "pt=96",
+            "!", f"rtspclientsink location={url}"
+        ]
+        process = subprocess.Popen(command, stdin=subprocess.PIPE)
+        if first_frame:
+            url_lock = url
+            url_unlock.set()
+        process.stdin.write(annotated_frame.tobytes())
+        process.stdin.close()
+        process.wait()
 
     cap.release()
 
-# Process all streams
-for stream in rtsp_streams:
-    process_stream(stream)
+def lock():
+    global url_lock
+    if url_lock is not None:
+        url_lock = None
+    if url_unlock.is_set():
+        url_unlock.clear()

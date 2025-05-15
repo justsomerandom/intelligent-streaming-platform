@@ -1,4 +1,4 @@
-# Dockerfile for Analytics (YOLOv5 + OpenCV)
+# Dockerfile for Ingestion, Analytics and Streaming Service
 FROM python:3.13-slim
 
 # Set working directory
