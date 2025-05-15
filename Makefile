@@ -46,7 +46,7 @@ build-client:
 # Run all services using Docker Compose
 .PHONY: up
 up:
-	@if [ $(shell docker-compose -f docker/docker-compose.build.yml images -q) ]; then \
+	if [ $(shell docker-compose -f docker/docker-compose.build.yml images -q) ]; then \
 		docker-compose -f docker/docker-compose.build.yml up -d; \
 	else \
 		docker-compose -f docker/docker-compose.yml up -d; \
@@ -61,3 +61,8 @@ upx:
 .PHONY: down
 down:
 	docker-compose -f docker/docker-compose.yml down
+
+# Install npm dependencies locally
+.PHONY: npm-dep
+npm-dep:
+	npm install --prefix ./src/client
