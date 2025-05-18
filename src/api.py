@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import subprocess
 import analytics
@@ -28,15 +29,17 @@ class StreamUpdate(BaseModel):
     framerate: Optional[int] = None
     bitrate: Optional[str] = None
 
+app.mount("/", StaticFiles(directory="src/static", html=True), name="static")
+
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the Intelligent Multi-Source Video Platform API"}
 
-@app.get("/streams")
+@app.get("/api/streams")
 def list_streams():
     return streams
 
-@app.post("/streams/start")
+@app.post("/api/streams/start")
 def start_stream(config: StreamConfig):
     if config.type not in ["raw", "annotated"]:
         raise HTTPException(status_code=400, detail="Invalid stream type")
@@ -75,7 +78,7 @@ def start_stream(config: StreamConfig):
     }
     return {"message": f"Started {config.type} stream at rtsp://video-processor:8556/{stream_name}", "stream_name": stream_name}
 
-@app.post("/streams/stop")
+@app.post("/api/streams/stop")
 def stop_stream(stream_name: str, stream_type: str):
     if stream_type not in ["raw", "annotated"]:
         raise HTTPException(status_code=400, detail="Invalid stream type")
@@ -84,7 +87,7 @@ def stop_stream(stream_name: str, stream_type: str):
     streams[stream_type][stream_name]["status"] = "inactive"
     return {"message": f"Stopped {stream_type} stream {stream_name}"}
 
-@app.post("/streams/update")
+@app.post("/api/streams/update")
 def update_stream(params: StreamUpdate):
     if params.stream_type not in ["raw", "annotated"]:
         raise HTTPException(status_code=400, detail="Invalid stream type")
@@ -99,10 +102,24 @@ def update_stream(params: StreamUpdate):
         stream["bitrate"] = params.bitrate
     return {"message": f"Updated {params.stream_type} stream {params.stream_name}", "stream": stream}
 
-@app.get("/streams/status")
+@app.get("/api/streams/status")
 def stream_status():
     return streams
 
-@app.get("/analytics/metrics")
+@app.get("/api/streams/active")
+def list_all_active_streams():
+    all_active = []
+    for stream_type in ["raw", "annotated"]:
+        for name, s in streams.get(stream_type, {}).items():
+            if s.get("status") == "active":
+                all_active.append({
+                    "name": name,
+                    "type": stream_type,
+                    "url": f"http://localhost:8556/{name}"
+                })
+    return {"streams": all_active}
+
+
+@app.get("/api/analytics/metrics")
 def get_analytics_metrics():
     return JSONResponse(content=analytics.get_metrics())

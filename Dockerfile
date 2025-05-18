@@ -1,4 +1,3 @@
-# Dockerfile for Ingestion, Analytics and Streaming Service
 FROM python:3.13-slim
 
 # Set working directory
@@ -16,16 +15,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies (YOLOv5 + FastAPI + OpenCV)
-COPY docker/requirements/requirements.processor /app/requirements.txt
+COPY ./requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
-# Copy Analytics source code
-COPY src/video-processor /app/src/video-processor
+# Copy source code
+COPY ./src /app/src
 
-# Expose RTSP port for GStreamer
+# Expose ports
 EXPOSE 8000
 EXPOSE 8554
 EXPOSE 8556
 
 # Command to run the Analytics Service
-CMD ["python3", "/app/src/video-processor/main.py"]
+CMD ["python3", "/app/src/main.py"]
