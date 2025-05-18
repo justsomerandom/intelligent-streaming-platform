@@ -83,11 +83,6 @@ status:
 	@docker ps --format "table {{.ID}}\t{{.Image}}\t{{.Names}}"
 	@echo ""
 
-# Install npm dependencies locally
-.PHONY: npm-dep
-npm-dep:
-	npm install --prefix ./src/client
-
 # Restart all services
 .PHONY: restart
 restart: down up
