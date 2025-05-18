@@ -10,9 +10,5 @@ export default defineConfig({
     watch: {
       usePolling: true,
     },
-    hmr: {
-      host: 'localhost',
-      port: 24678,
-    }
   },
 });
