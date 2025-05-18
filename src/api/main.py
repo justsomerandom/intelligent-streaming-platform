@@ -2,22 +2,30 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import subprocess
 import requests
+from typing import Optional
 
 app = FastAPI()
 
-# In-memory store for active streams
+# In-memory store for active streams and analytics
 streams = {
     "raw": {},
     "annotated": {}
 }
+analytics_metrics = {}
 
-# Model for stream configuration
 class StreamConfig(BaseModel):
     source: str
-    type: str  # raw or annotated
+    type: str  # "raw" or "annotated"
     resolution: str = "640x480"
     framerate: int = 30
     bitrate: str = "1M"
+
+class StreamUpdate(BaseModel):
+    stream_name: str
+    stream_type: str  # "raw" or "annotated"
+    resolution: Optional[str] = None
+    framerate: Optional[int] = None
+    bitrate: Optional[str] = None
 
 @app.get("/")
 def read_root():
@@ -34,7 +42,6 @@ def start_stream(config: StreamConfig):
 
     stream_name = f"{config.type}_camera_{len(streams[config.type])}"
 
-    # Command for GStreamer (raw stream for simplicity)
     if config.type == "raw":
         command = [
             "gst-launch-1.0",
@@ -43,30 +50,62 @@ def start_stream(config: StreamConfig):
             "!", f"video/x-raw,width={config.resolution.split('x')[0]},height={config.resolution.split('x')[1]},framerate={config.framerate}/1",
             "!", "x264enc", "tune=zerolatency", f"bitrate={config.bitrate}",
             "!", "rtph264pay", "pt=96",
-            "!", f"rtspclientsink location=rtsp://video-streaming:8556/{stream_name}"
+            "!", f"rtspclientsink location=rtsp://video-processor:8556/{stream_name}"
         ]
         subprocess.Popen(command)
-        streams[config.type][stream_name] = {
-            "source": config.source,
-            "resolution": config.resolution,
-            "framerate": config.framerate,
-            "bitrate": config.bitrate,
-            "status": "active"
-        }
-        return {"message": f"Started {config.type} stream at rtsp://video-streaming:8556/{stream_name}"}
+    else:
+        command = [
+            "gst-launch-1.0",
+            "v4l2src", f"device={config.source}",
+            "!", "videoconvert",
+            "!", f"video/x-raw,width={config.resolution.split('x')[0]},height={config.resolution.split('x')[1]},framerate={config.framerate}/1",
+            "!", "x264enc", "tune=zerolatency", f"bitrate={config.bitrate}",
+            "!", "rtph264pay", "pt=96",
+            "!", f"rtspclientsink location=rtsp://video-processor:8556/annotated_{stream_name}"
+        ]
+        subprocess.Popen(command)
+
+    streams[config.type][stream_name] = {
+        "source": config.source,
+        "resolution": config.resolution,
+        "framerate": config.framerate,
+        "bitrate": config.bitrate,
+        "status": "active"
+    }
+    return {"message": f"Started {config.type} stream at rtsp://video-processor:8556/{stream_name}", "stream_name": stream_name}
 
 @app.post("/streams/stop")
 def stop_stream(stream_name: str, stream_type: str):
     if stream_type not in ["raw", "annotated"]:
         raise HTTPException(status_code=400, detail="Invalid stream type")
-
     if stream_name not in streams[stream_type]:
         raise HTTPException(status_code=404, detail="Stream not found")
-
-    # Stopping stream (for now, we will just mark it inactive)
     streams[stream_type][stream_name]["status"] = "inactive"
     return {"message": f"Stopped {stream_type} stream {stream_name}"}
+
+@app.post("/streams/update")
+def update_stream(params: StreamUpdate):
+    if params.stream_type not in ["raw", "annotated"]:
+        raise HTTPException(status_code=400, detail="Invalid stream type")
+    if params.stream_name not in streams[params.stream_type]:
+        raise HTTPException(status_code=404, detail="Stream not found")
+    stream = streams[params.stream_type][params.stream_name]
+    if params.resolution:
+        stream["resolution"] = params.resolution
+    if params.framerate:
+        stream["framerate"] = params.framerate
+    if params.bitrate:
+        stream["bitrate"] = params.bitrate
+    return {"message": f"Updated {params.stream_type} stream {params.stream_name}", "stream": stream}
 
 @app.get("/streams/status")
 def stream_status():
     return streams
+
+@app.get("/analytics/metrics")
+def get_analytics_metrics():
+    try:
+        resp = requests.get("http://video-processor:8001/metrics", timeout=2)
+        return resp.json()
+    except Exception:
+        return {"error": "Could not fetch analytics metrics"}

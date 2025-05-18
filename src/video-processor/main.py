@@ -1,4 +1,5 @@
 import asyncio
+import uvicorn
 from core import analytics
 from core import ingestion
 from core import streaming
@@ -11,6 +12,7 @@ video_sources = [
 ]
 
 async def main():
+    asyncio.create_task(uvicorn.run("core.analytics:app", host="0.0.0.0", port=8001))
     for i, source in enumerate(video_sources):
         stream_name = f"camera{i}"
         url = ingestion.start_rtsp_stream(source, stream_name)
