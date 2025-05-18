@@ -1,7 +1,8 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import subprocess
-import requests
+import analytics
 from typing import Optional
 
 app = FastAPI()
@@ -104,8 +105,4 @@ def stream_status():
 
 @app.get("/analytics/metrics")
 def get_analytics_metrics():
-    try:
-        resp = requests.get("http://video-processor:8001/metrics", timeout=2)
-        return resp.json()
-    except Exception:
-        return {"error": "Could not fetch analytics metrics"}
+    return JSONResponse(content=analytics.get_metrics())

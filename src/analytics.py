@@ -1,8 +1,6 @@
 import cv2
 from ultralytics import YOLO
-from core.streaming import stream_annotated_frame
-from fastapi import FastAPI
-from fastapi.responses import JSONResponse
+from streaming import stream_annotated_frame
 
 # Load the YOLOv5 Tiny model
 model = YOLO("yolov5nu.pt")
@@ -45,9 +43,5 @@ async def process_stream(stream_url):
 
     cap.release()
 
-# FastAPI app for metrics
-app = FastAPI()
-
-@app.get("/metrics")
 def get_metrics():
-    return JSONResponse(content=metrics)
+    return metrics

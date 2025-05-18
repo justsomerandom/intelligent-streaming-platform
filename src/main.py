@@ -1,9 +1,10 @@
 import asyncio
 import uvicorn
-from core import analytics
-from core import ingestion
-from core import streaming
-from fastapi import FastAPI
+import analytics
+import ingestion
+import streaming
+import api
+import client
 
 # List of video sources (can be /dev/video*, IP cameras, or MJPEG/RTSP)
 video_sources = [
@@ -13,7 +14,7 @@ video_sources = [
 ]
 
 def start_metrics_api():
-    config = uvicorn.Config("core.analytics:app", host="0.0.0.0", port=8001, log_level="info")
+    config = uvicorn.Config("api:app", host="0.0.0.0", port=8001, log_level="info")
     server = uvicorn.Server(config)
     return server.serve()
 

@@ -23,7 +23,7 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 COPY src/video-processor /app/src/video-processor
 
 # Expose RTSP port for GStreamer
-EXPOSE 8001
+EXPOSE 8000
 EXPOSE 8554
 EXPOSE 8556
 
