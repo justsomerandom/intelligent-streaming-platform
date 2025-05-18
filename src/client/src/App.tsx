@@ -20,7 +20,7 @@ type Metrics = {
   last_labels: string[];
 };
 
-const API_BASE = "http://localhost:8000"; // Change if needed
+const API_BASE = "http://localhost:8000";
 
 const App: React.FC = () => {
   const [streams, setStreams] = useState<StreamsResponse | null>(null);

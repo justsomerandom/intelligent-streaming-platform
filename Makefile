@@ -87,3 +87,15 @@ status:
 .PHONY: npm-dep
 npm-dep:
 	npm install --prefix ./src/client
+
+# Restart all services
+.PHONY: restart
+restart: down up
+
+# Rebuild and restart all services
+.PHONY: rebuild
+rebuild: down build up
+
+# Rebuild and restart all services using Docker Bake
+.PHONY: rebake
+rebake: down bake up
