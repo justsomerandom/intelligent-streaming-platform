@@ -27,5 +27,5 @@ def start_rtsp_stream(source, stream_name, is_local=True):
             "!", f"rtspclientsink location={full_url}"
         ]
     print(f"Starting RTSP stream: {full_url}")
-    subprocess.Popen(command)
+    subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return full_url

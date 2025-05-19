@@ -7,4 +7,4 @@
 sleep 2
 
 # Then run your main Python app
-python src/main.py
+IP_HOST=host.docker.internal python src/main.py

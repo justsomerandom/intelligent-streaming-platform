@@ -8,6 +8,7 @@ import os
 
 # List of video sources (can be /dev/video*, IP cameras, or MJPEG/RTSP)
 video_sources = []
+ip_host = os.getenv("IP_HOST", "localhost")
 
 def start_api():
     config = uvicorn.Config("api:app", host="0.0.0.0", port=8080, log_level="info")
@@ -19,7 +20,7 @@ def get_video_sources():
     if os.path.exists("/dev"):
         video_devices = [os.path.join("/dev", d) for d in os.listdir("/dev") if d.startswith("video")]
         video_sources.extend(video_devices)
-    served_sources = requests.get("http://docker.internal.host:8081/cams")
+    served_sources = requests.get(f"http://{ip_host}:8081/cams")
     if served_sources.status_code == 200:
         served_sources = served_sources.json().get("cameras", [])
         for source in served_sources:
@@ -35,9 +36,6 @@ async def process_camera_streams():
             url = ingestion.start_rtsp_stream(source, stream_name, is_local=True)
         else:
             url = ingestion.start_rtsp_stream(source, stream_name, is_local=False)
-
-        # Start raw streaming (e.g., to GStreamer pipeline or WebRTC)
-        streaming.start_stream(stream_name, url)
 
         # Start annotated stream (optional: delay or signal after analysis starts)
         annotated_stream_name = f"annotated_camera{i}"
