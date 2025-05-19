@@ -16,6 +16,16 @@ help:
 	@echo "  make help          Show this help message"
 	@echo ""
 
+# Stream webcams for Docker
+.PHONY: win-setup
+win-setup:
+	python ./windows/cam_setup.py
+
+# Stop streaming webcams for Docker
+.PHONY: win-teardown
+win-teardown:
+	./windows/cam_teardown.bat
+
 # Build images using Docker Compose
 .PHONY: build
 build:
@@ -25,6 +35,11 @@ build:
 .PHONY: up
 up:
 	docker run -d --name $(NAME) -p 8080:8080 -p 8554:8554 -p 8556:8556 $(NAME)
+
+# Run all services on Linux for sharing webcam
+.PHONY: up-linux
+up-linux:
+	docker run --privileged -d --name $(NAME) --device /dev/video0:/dev/video0 -p 8080:8080 -p 8554:8554 -p 8556:8556 $(NAME)
 
 # Stop all running services
 .PHONY: down

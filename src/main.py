@@ -3,18 +3,20 @@ import uvicorn
 import analytics
 import ingestion
 import streaming
+import os
 
 # List of video sources (can be /dev/video*, IP cameras, or MJPEG/RTSP)
-video_sources = [
-    "/dev/video0",
-    "/dev/video1",
-    "rtsp://your_ip_camera_url"
-]
+video_sources = []
 
-def start_metrics_api():
+def start_api():
     config = uvicorn.Config("api:app", host="0.0.0.0", port=8080, log_level="info")
     server = uvicorn.Server(config)
     return server.serve()
+
+def get_video_sources():
+    global video_sources
+    video_devices = [os.path.join("/dev", d) for d in os.listdir("/dev") if d.startswith("video")]
+    video_sources.extend(video_devices)
 
 async def process_camera_streams():
     for i, source in enumerate(video_sources):
@@ -34,8 +36,9 @@ async def process_camera_streams():
         asyncio.create_task(analytics.process_stream(url))
 
 async def main():
+    get_video_sources()
     await asyncio.gather(
-        start_metrics_api(),
+        start_api(),
         process_camera_streams()
     )
 
