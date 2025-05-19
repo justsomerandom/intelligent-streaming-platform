@@ -12,7 +12,7 @@ video_sources = [
 ]
 
 def start_metrics_api():
-    config = uvicorn.Config("api:app", host="0.0.0.0", port=8000, log_level="info")
+    config = uvicorn.Config("api:app", host="0.0.0.0", port=8080, log_level="info")
     server = uvicorn.Server(config)
     return server.serve()
 

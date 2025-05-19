@@ -22,7 +22,7 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 COPY ./src /app/src
 
 # Expose ports
-EXPOSE 8000
+EXPOSE 8080
 EXPOSE 8554
 EXPOSE 8556
 
