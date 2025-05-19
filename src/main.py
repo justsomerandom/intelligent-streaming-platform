@@ -23,7 +23,10 @@ async def process_camera_streams():
         stream_name = f"camera{i}"
 
         # Start ingesting from source and get internal RTSP URL
-        url = ingestion.start_rtsp_stream(source, stream_name)
+        if source.startswith("/dev/"):
+            url = ingestion.start_rtsp_stream(source, stream_name, is_local=True)
+        else:
+            url = ingestion.start_rtsp_stream(source, stream_name, is_local=False)
 
         # Start raw streaming (e.g., to GStreamer pipeline or WebRTC)
         streaming.start_stream(stream_name, url)
