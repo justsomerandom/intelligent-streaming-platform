@@ -26,12 +26,17 @@ win-setup:
 win-teardown:
 	./windows/cam_teardown.bat
 
-# Build images using Docker Compose
+# Run the application locally
+.PHONY: run
+run:
+	python ./src/main.py
+
+# Build images using Docker
 .PHONY: build
 build:
 	docker build -t $(NAME) .
 
-# Run all services using Docker Compose
+# Run all services using Docker
 .PHONY: up
 up:
 	docker run -d --name $(NAME) -p 8080:8080 $(NAME)

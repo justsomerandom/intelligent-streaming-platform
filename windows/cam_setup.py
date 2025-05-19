@@ -59,8 +59,9 @@ def open_all_webcams(max_devices=5):
             video_sources[i] = cap
             locks[i] = threading.Lock()
         else:
-            print(f"❌  Camera {i} not found.")
+            print(f"❌  Camera {i} does not exist, proceeding...")
             cap.release()
+            break
 
 if __name__ == "__main__":
     open_all_webcams()
