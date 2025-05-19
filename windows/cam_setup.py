@@ -3,6 +3,10 @@ import threading
 from fastapi import FastAPI, Response
 from fastapi.responses import StreamingResponse
 import uvicorn
+import os
+
+os.environ["OPENCV_VIDEOIO_MSMF_ENABLE_HW_TRANSFORMS"] = "0"
+os.environ["OPENCV_LOG_LEVEL"] = "SILENT"
 
 app = FastAPI()
 
@@ -51,11 +55,13 @@ def open_all_webcams(max_devices=5):
     for i in range(max_devices):
         cap = cv2.VideoCapture(i)
         if cap.isOpened():
+            print(f"✔️  Camera {i} is available.")
             video_sources[i] = cap
             locks[i] = threading.Lock()
         else:
+            print(f"❌  Camera {i} not found.")
             cap.release()
 
 if __name__ == "__main__":
     open_all_webcams()
-    uvicorn.run(app, host="0.0.0.0", port=8554)
+    uvicorn.run(app, host="0.0.0.0", port=8081)

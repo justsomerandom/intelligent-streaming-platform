@@ -3,6 +3,7 @@ import uvicorn
 import analytics
 import ingestion
 import streaming
+import requests
 import os
 
 # List of video sources (can be /dev/video*, IP cameras, or MJPEG/RTSP)
@@ -15,8 +16,15 @@ def start_api():
 
 def get_video_sources():
     global video_sources
-    video_devices = [os.path.join("/dev", d) for d in os.listdir("/dev") if d.startswith("video")]
-    video_sources.extend(video_devices)
+    if os.path.exists("/dev"):
+        video_devices = [os.path.join("/dev", d) for d in os.listdir("/dev") if d.startswith("video")]
+        video_sources.extend(video_devices)
+    served_sources = requests.get("http://localhost:8081/cams")
+    if served_sources.status_code == 200:
+        served_sources = served_sources.json().get("cameras", [])
+        for source in served_sources:
+            if source not in video_sources:
+                video_sources.append(source)
 
 async def process_camera_streams():
     for i, source in enumerate(video_sources):
