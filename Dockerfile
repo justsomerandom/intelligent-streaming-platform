@@ -15,10 +15,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install rtsp-simple-server
-RUN wget https://github.com/aler9/rtsp-simple-server/releases/latest/download/rtsp-simple-server_linux_amd64.tar.gz \
-    && tar -xzf rtsp-simple-server_linux_amd64.tar.gz \
-    && mv rtsp-simple-server /usr/local/bin/ \
-    && rm rtsp-simple-server_linux_amd64.tar.gz
+RUN wget https://github.com/bluenviron/mediamtx/releases/download/v1.12.2/mediamtx_v1.12.2_darwin_amd64.tar.gz \
+    && tar -xzf mediamtx_v1.12.2_darwin_amd64.tar.gz \
+    && mv mediamtx /usr/local/bin/ \
+    && rm mediamtx_v1.12.2_darwin_amd64.tar.gz
 
 # Install Python dependencies (YOLOv5 + FastAPI + OpenCV)
 COPY ./requirements.txt /app/requirements.txt

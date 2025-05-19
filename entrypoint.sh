@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Start RTSP server in background
-rtsp-simple-server &
+./usr/local/bin/mediamtx &
 
 # Wait briefly to ensure it's up
 sleep 2
