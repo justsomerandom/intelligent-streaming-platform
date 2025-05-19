@@ -19,7 +19,7 @@ def get_video_sources():
     if os.path.exists("/dev"):
         video_devices = [os.path.join("/dev", d) for d in os.listdir("/dev") if d.startswith("video")]
         video_sources.extend(video_devices)
-    served_sources = requests.get("http://localhost:8081/cams")
+    served_sources = requests.get("http://docker.internal.host:8081/cams")
     if served_sources.status_code == 200:
         served_sources = served_sources.json().get("cameras", [])
         for source in served_sources:

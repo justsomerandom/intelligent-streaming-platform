@@ -34,12 +34,12 @@ build:
 # Run all services using Docker Compose
 .PHONY: up
 up:
-	docker run -d --name $(NAME) -p 8080:8080 -p 8554:8554 -p 8556:8556 $(NAME)
+	docker run -d --name $(NAME) -p 8080:8080 $(NAME)
 
 # Run all services on Linux for sharing webcam
 .PHONY: up-linux
 up-linux:
-	docker run --privileged -d --name $(NAME) --device /dev/video0:/dev/video0 -p 8080:8080 -p 8554:8554 -p 8556:8556 $(NAME)
+	docker run --privileged -d --name $(NAME) --device /dev/video0:/dev/video0 -p 8080:8080 $(NAME)
 
 # Stop all running services
 .PHONY: down

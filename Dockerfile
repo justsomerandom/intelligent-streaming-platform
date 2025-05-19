@@ -18,7 +18,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN wget https://github.com/bluenviron/mediamtx/releases/download/v1.12.2/mediamtx_v1.12.2_darwin_amd64.tar.gz \
     && tar -xzf mediamtx_v1.12.2_darwin_amd64.tar.gz \
     && mv mediamtx /usr/local/bin/ \
-    && rm mediamtx_v1.12.2_darwin_amd64.tar.gz
+    && rm mediamtx_v1.12.2_darwin_amd64.tar.gz \
+    && chmod +x /usr/local/bin/mediamtx
 
 # Install Python dependencies (YOLOv5 + FastAPI + OpenCV)
 COPY ./requirements.txt /app/requirements.txt
@@ -29,8 +30,6 @@ COPY ./src /app/src
 
 # Expose ports
 EXPOSE 8080
-EXPOSE 8554
-EXPOSE 8556
 
 # Command to run
 COPY entrypoint.sh /entrypoint.sh
