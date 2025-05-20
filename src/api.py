@@ -33,8 +33,6 @@ class StreamUpdate(BaseModel):
     framerate: Optional[int] = None
     bitrate: Optional[str] = None
 
-app.mount("/player", StaticFiles(directory="src/static", html=True), name="static")
-
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the Intelligent Multi-Source Video Platform API"}

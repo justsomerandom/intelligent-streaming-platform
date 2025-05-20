@@ -7,3 +7,5 @@ node_modules/
 dist/
 *.pt
 mediamtx/
+player.js
+static/libs/
