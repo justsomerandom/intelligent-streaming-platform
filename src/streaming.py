@@ -5,16 +5,16 @@ stream_processes = {}
 
 def start_annotated_stream(name, width, height, fps=25):
     global stream_processes
-    command = [
-        "gst-launch-1.0",
-        "fdsrc", "!",
-        f"rawvideoparse width={width} height={height} format=rgb",
-        "!", "videoconvert",
-        "!", "x264enc speed-preset=ultrafast tune=zerolatency",
-        "!", "rtph264pay", "pt=96",
-        "!", f"rtspclientsink location=rtsp://0.0.0.0:8554/{name}"
-    ]
-    print(f"Starting annotated stream for {name} at rtsp://0.0.0.0:8554/{name}")
+    command = (
+        f'gst-launch-1.0 '
+        f'fdsrc '
+        f'! rawvideoparse width={width} height={height} format=rgb '
+        f'! videoconvert '
+        f'! x264enc speed-preset=ultrafast tune=zerolatency '
+        f'! h264parse '
+        f'! rtspclientsink location=rtsp://localhost:8554/{name}'
+    )
+    print(f"Starting annotated stream for {name} at rtsp://localhost:8554/{name}")
     proc = subprocess.Popen(command, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stream_processes[name] = proc
 

@@ -13,6 +13,8 @@ metrics = {
 
 # Function to process and annotate frames
 async def process_stream(stream_url):
+    stream_url = stream_url.replace("localhost", "0.0.0.0")
+    print(f"Processing stream: {stream_url}")
     cap = cv2.VideoCapture(stream_url)
     if not cap.isOpened():
         print(f"Failed to connect to {stream_url}")
