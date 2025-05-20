@@ -47,7 +47,7 @@ def start_stream(config: StreamConfig):
         raise HTTPException(status_code=400, detail="Invalid stream type")
 
     if config.type == "raw":
-        ingestion.start_rtsp_stream(config.source, config.stream_name, config.is_local)
+        ingestion.start_rtsp_stream(config.source, config.stream_name, config.resolution, config.is_local)
     else:
         res = config.resolution.split("x")
         streaming.start_annotated_stream(config.stream_name, int(res[0]), int(res[1]), config.framerate)

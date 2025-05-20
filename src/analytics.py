@@ -12,7 +12,7 @@ metrics = {
 }
 
 # Function to process and annotate frames
-async def process_stream(stream_url, fps=25):
+def process_stream(stream_url):
     print(f"Processing stream: {stream_url}")
     cap = cv2.VideoCapture(stream_url, cv2.CAP_FFMPEG)
     if not cap.isOpened():
@@ -41,7 +41,7 @@ async def process_stream(stream_url, fps=25):
 
         # Stream the annotated frame using a persistent pipeline (see streaming.py)
         name = f"annotated_{stream_url.split('/')[-1]}"
-        await stream_annotated_frame(annotated_frame, name)
+        stream_annotated_frame(annotated_frame, name)
         frame_count += 1
 
     cap.release()

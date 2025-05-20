@@ -9,6 +9,9 @@ import cv2
 import platform
 import os
 import time
+from concurrent.futures import ThreadPoolExecutor
+
+executor = ThreadPoolExecutor(max_workers=4)
 
 # List of video sources (can be /dev/video*, IP cameras, or MJPEG/RTSP)
 video_sources = []
@@ -47,7 +50,6 @@ def get_video_sources():
             print(f"Error fetching camera sources: {e}")
 
 async def process_camera_streams():
-    tasks = []
     urls = []
 
     annotated_fps = 25
@@ -62,7 +64,7 @@ async def process_camera_streams():
             type="raw",
             stream_name=stream_name,
             is_local=is_local,
-            resolution="640x480",
+            resolution="1280x720",
         )
         api.start_stream(raw_config)
 
@@ -72,7 +74,7 @@ async def process_camera_streams():
             type="annotated",
             stream_name=annotated_stream_name,
             is_local=is_local,
-            resolution="640x480",
+            resolution="1280x720",
             framerate=annotated_fps,
         )
         api.start_stream(annotated_config)
@@ -80,15 +82,8 @@ async def process_camera_streams():
     await asyncio.sleep(5)
 
     for url in urls:
-        task = asyncio.create_task(
-            asyncio.to_thread(
-                analytics.process_stream(url, annotated_fps)
-                )
-            )
-        tasks.append(task)
-
-    # Let analytics tasks run in background
-    return tasks
+        executor.submit(analytics.process_stream, url)
+    
 
 
 async def main():
@@ -98,12 +93,9 @@ async def main():
     api_task = asyncio.create_task(start_api())
 
     # Start stream processing
-    analytics_tasks = await process_camera_streams()
+    analytics_task = asyncio.create_task(process_camera_streams())
 
-    # Await only the API task (analytics will run in background)
-    await api_task
-    for task in analytics_tasks:
-        await task
+    await asyncio.gather(api_task, analytics_task)
 
 
 if __name__ == "__main__":

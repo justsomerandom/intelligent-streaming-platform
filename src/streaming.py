@@ -1,5 +1,6 @@
 import subprocess
 import cv2
+import numpy as np
 
 stream_processes = {}
 
@@ -19,8 +20,11 @@ def start_annotated_stream(name, width, height, fps=25):
     print(f"Starting annotated stream for {name} at rtsp://localhost:8554/{name}")
     proc = subprocess.Popen(command, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stream_processes[name] = proc
+    dummy = np.zeros((height, width, 3), dtype=np.uint8)
+    rgb_dummy = cv2.cvtColor(dummy, cv2.COLOR_BGR2RGB)
+    proc.stdin.write(rgb_dummy.tobytes())
 
-async def stream_annotated_frame(frame, name):
+def stream_annotated_frame(frame, name):
     global stream_processes
     proc = stream_processes.get(name)
     if proc is None or proc.stdin is None:

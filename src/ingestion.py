@@ -6,7 +6,7 @@ import threading
 rtsp_base_url = "rtsp://localhost:8554/"
 
 # Function to start an RTSP stream for each source
-def start_rtsp_stream(source, stream_name, is_local=True):
+def start_rtsp_stream(source, stream_name, resolution, is_local=True):
     full_url = f"{rtsp_base_url}{stream_name}"
     if is_local:
         if source.startswith("/dev/video"):
@@ -14,6 +14,7 @@ def start_rtsp_stream(source, stream_name, is_local=True):
             command = (
                 f'gst-launch-1.0 '
                 f'v4l2src device={source} '
+                f'! video/x-raw, width={resolution.split("x")[0]}, height={resolution.split("x")[1]} '
                 f'! videoconvert '
                 f'! x264enc tune=zerolatency '
                 f'! h264parse '
@@ -24,6 +25,7 @@ def start_rtsp_stream(source, stream_name, is_local=True):
             command = (
                 f'gst-launch-1.0 '
                 f'mfvideosrc device-index={source} '
+                f'! video/x-raw, width={resolution.split("x")[0]}, height={resolution.split("x")[1]} '
                 f'! videoconvert '
                 f'! x264enc tune=zerolatency '
                 f'! h264parse '
@@ -34,6 +36,7 @@ def start_rtsp_stream(source, stream_name, is_local=True):
         command = (
             f'gst-launch-1.0 '
             f'souphttpsrc location={source} '
+            f'! video/x-raw, width={resolution.split("x")[0]}, height={resolution.split("x")[1]} '
             f'! jpegdec '
             f'! videoconvert '
             f'! x264enc tune=zerolatency '
