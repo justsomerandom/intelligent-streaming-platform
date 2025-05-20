@@ -12,10 +12,9 @@ metrics = {
 }
 
 # Function to process and annotate frames
-async def process_stream(stream_url):
-    stream_url = stream_url.replace("localhost", "0.0.0.0")
+async def process_stream(stream_url, fps=25):
     print(f"Processing stream: {stream_url}")
-    cap = cv2.VideoCapture(stream_url)
+    cap = cv2.VideoCapture(stream_url, cv2.CAP_FFMPEG)
     if not cap.isOpened():
         print(f"Failed to connect to {stream_url}")
         return
@@ -28,10 +27,12 @@ async def process_stream(stream_url):
             break
 
         # Perform object detection
-        results = model(frame)
-        annotated_frame = results.render()[0]  # Get the annotated frame
-        labels = results.names if hasattr(results, "names") else []
-        num_detections = len(results.xyxy[0]) if hasattr(results, "xyxy") else 0
+        results = model(frame, verbose=False)
+        result = results[0]
+        annotated_frame = result.plot()
+
+        labels = result.names if hasattr(result, "names") else []
+        num_detections = len(result.boxes) if hasattr(result, "boxes") else 0
 
         # Update metrics
         metrics["total_frames"] += 1
@@ -39,8 +40,8 @@ async def process_stream(stream_url):
         metrics["last_labels"] = labels
 
         # Stream the annotated frame using a persistent pipeline (see streaming.py)
-        name = f"{stream_url.split('/')[-1]}{frame_count}"
-        stream_annotated_frame(annotated_frame, name)
+        name = f"annotated_{stream_url.split('/')[-1]}"
+        await stream_annotated_frame(annotated_frame, name)
         frame_count += 1
 
     cap.release()

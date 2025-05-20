@@ -4,6 +4,8 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import subprocess
 import analytics
+import ingestion
+import streaming
 from typing import Optional
 
 app = FastAPI()
@@ -16,11 +18,13 @@ streams = {
 analytics_metrics = {}
 
 class StreamConfig(BaseModel):
-    source: str
+    stream_name: str
+    source: str | int
     type: str  # "raw" or "annotated"
     resolution: str = "640x480"
     framerate: int = 30
     bitrate: str = "1M"
+    is_local: bool = False
 
 class StreamUpdate(BaseModel):
     stream_name: str
@@ -29,7 +33,7 @@ class StreamUpdate(BaseModel):
     framerate: Optional[int] = None
     bitrate: Optional[str] = None
 
-app.mount("/", StaticFiles(directory="src/static", html=True), name="static")
+app.mount("/player", StaticFiles(directory="src/static", html=True), name="static")
 
 @app.get("/")
 def read_root():
@@ -44,39 +48,20 @@ def start_stream(config: StreamConfig):
     if config.type not in ["raw", "annotated"]:
         raise HTTPException(status_code=400, detail="Invalid stream type")
 
-    stream_name = f"{config.type}_camera_{len(streams[config.type])}"
-
     if config.type == "raw":
-        command = [
-            "gst-launch-1.0",
-            "v4l2src", f"device={config.source}",
-            "!", "videoconvert",
-            "!", f"video/x-raw,width={config.resolution.split('x')[0]},height={config.resolution.split('x')[1]},framerate={config.framerate}/1",
-            "!", "x264enc", "tune=zerolatency", f"bitrate={config.bitrate}",
-            "!", "rtph264pay", "pt=96",
-            "!", f"rtspclientsink location=rtsp://video-processor:8556/{stream_name}"
-        ]
-        subprocess.Popen(command)
+        ingestion.start_rtsp_stream(config.source, config.stream_name, config.is_local)
     else:
-        command = [
-            "gst-launch-1.0",
-            "v4l2src", f"device={config.source}",
-            "!", "videoconvert",
-            "!", f"video/x-raw,width={config.resolution.split('x')[0]},height={config.resolution.split('x')[1]},framerate={config.framerate}/1",
-            "!", "x264enc", "tune=zerolatency", f"bitrate={config.bitrate}",
-            "!", "rtph264pay", "pt=96",
-            "!", f"rtspclientsink location=rtsp://video-processor:8556/annotated_{stream_name}"
-        ]
-        subprocess.Popen(command)
+        res = config.resolution.split("x")
+        streaming.start_annotated_stream(config.stream_name, int(res[0]), int(res[1]), config.framerate)
 
-    streams[config.type][stream_name] = {
+    streams[config.type][config.stream_name] = {
         "source": config.source,
         "resolution": config.resolution,
         "framerate": config.framerate,
         "bitrate": config.bitrate,
         "status": "active"
     }
-    return {"message": f"Started {config.type} stream at rtsp://video-processor:8556/{stream_name}", "stream_name": stream_name}
+    return {"message": f"Started {config.type} stream at rtsp://localhost:8554/{config.stream_name}", "stream_name": config.stream_name}
 
 @app.post("/api/streams/stop")
 def stop_stream(stream_name: str, stream_type: str):
@@ -115,7 +100,7 @@ def list_all_active_streams():
                 all_active.append({
                     "name": name,
                     "type": stream_type,
-                    "url": f"http://localhost:8556/{name}"
+                    "url": f"rtsp://localhost:8554/{name}"
                 })
     return {"streams": all_active}
 

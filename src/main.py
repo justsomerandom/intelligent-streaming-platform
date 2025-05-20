@@ -2,11 +2,13 @@ import asyncio
 import uvicorn
 import analytics
 import ingestion
+import api
 import streaming
 import requests
 import cv2
 import platform
 import os
+import time
 
 # List of video sources (can be /dev/video*, IP cameras, or MJPEG/RTSP)
 video_sources = []
@@ -45,26 +47,64 @@ def get_video_sources():
             print(f"Error fetching camera sources: {e}")
 
 async def process_camera_streams():
+    tasks = []
+    urls = []
+
+    annotated_fps = 25
     for i, source in enumerate(video_sources):
         stream_name = f"camera{i}"
 
-        # Start ingesting from source and get internal RTSP URL
         is_local = source.startswith("/dev/video") or source.isdigit()
-        url = ingestion.start_rtsp_stream(source, stream_name, is_local)
+        url = f"rtsp://localhost:8554/{stream_name}"
+        urls.append(url)
+        raw_config = api.StreamConfig(
+            source=source,
+            type="raw",
+            stream_name=stream_name,
+            is_local=is_local,
+            resolution="640x480",
+        )
+        api.start_stream(raw_config)
 
-        # Start annotated stream (optional: delay or signal after analysis starts)
         annotated_stream_name = f"annotated_camera{i}"
-        streaming.start_annotated_stream(annotated_stream_name, 640, 480, fps=25)
+        annotated_config = api.StreamConfig(
+            source=source,
+            type="annotated",
+            stream_name=annotated_stream_name,
+            is_local=is_local,
+            resolution="640x480",
+            framerate=annotated_fps,
+        )
+        api.start_stream(annotated_config)
 
-        # Start analytics processing on this stream
-        asyncio.create_task(analytics.process_stream(url))
+    await asyncio.sleep(5)
+
+    for url in urls:
+        task = asyncio.create_task(
+            asyncio.to_thread(
+                analytics.process_stream(url, annotated_fps)
+                )
+            )
+        tasks.append(task)
+
+    # Let analytics tasks run in background
+    return tasks
+
 
 async def main():
     get_video_sources()
-    await asyncio.gather(
-        start_api(),
-        process_camera_streams()
-    )
+
+    # Start the API server (runs forever)
+    api_task = asyncio.create_task(start_api())
+
+    # Start stream processing
+    analytics_tasks = await process_camera_streams()
+
+    # Await only the API task (analytics will run in background)
+    await api_task
+    for task in analytics_tasks:
+        await task
+
 
 if __name__ == "__main__":
     try:

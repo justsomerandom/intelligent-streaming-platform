@@ -50,7 +50,7 @@
 
                     if (streams.length > 0) {
                         const selected = streams[0];
-                        videoSource.src = `http://localhost:8556/${selected}`;
+                        videoSource.src = `rtsp://localhost:8554/${selected}`;
                         video.load();
                     } else {
                         video.pause();
@@ -62,7 +62,7 @@
 
             streamSelect.addEventListener("change", () => {
                 const selected = streamSelect.value;
-                videoSource.src = `http://localhost:8556/${selected}`;
+                videoSource.src = `rtsp://localhost:8554/${selected}`;
                 video.load();
             });
 
