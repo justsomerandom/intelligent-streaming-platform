@@ -36,3 +36,4 @@ def stream_annotated_frame(frame, name):
     else:
         rgb_frame = frame
     proc.stdin.write(rgb_frame.tobytes())
+    

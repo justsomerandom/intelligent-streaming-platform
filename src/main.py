@@ -97,7 +97,6 @@ async def main():
 
     await asyncio.gather(api_task, analytics_task)
 
-
 if __name__ == "__main__":
     try:
         asyncio.run(main())

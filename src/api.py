@@ -102,7 +102,6 @@ def list_all_active_streams():
                 })
     return {"streams": all_active}
 
-
 @app.get("/api/analytics/metrics")
 def get_analytics_metrics():
     return JSONResponse(content=analytics.get_metrics())

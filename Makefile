@@ -19,3 +19,4 @@ run:
 .PHONY: play
 play:
 	python ./src/player/player.py
+	
