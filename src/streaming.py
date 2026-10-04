@@ -1,6 +1,7 @@
 import subprocess
 import cv2
 import numpy as np
+from stream_settings import bitrate_to_kbps
 
 stream_processes = {}
 
@@ -31,13 +32,15 @@ def stop_annotated_stream(name):
     return True
 
 
-def start_annotated_stream(name, width, height, fps=25):
+def start_annotated_stream(name, width, height, fps=25, bitrate="1M"):
+    """Launch an annotated stream using the requested frame rate and bitrate."""
     stop_annotated_stream(name)
+    bitrate_kbps = bitrate_to_kbps(bitrate)
 
     command = [
         "gst-launch-1.0", "-v", "fdsrc", "fd=0", f"blocksize={width * height * 3}", "!",
         "rawvideoparse", f"width={width}", f"height={height}", "format=rgb", f"framerate={fps}/1",
-        "!", "videoconvert", "!", "x264enc", "speed-preset=ultrafast", "tune=zerolatency",
+        "!", "videoconvert", "!", "x264enc", "speed-preset=ultrafast", "tune=zerolatency", f"bitrate={bitrate_kbps}",
         "!", "h264parse", "!", "rtspclientsink", f"location=rtsp://localhost:8554/{name}",
     ]
 

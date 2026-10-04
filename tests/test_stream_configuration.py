@@ -74,6 +74,16 @@ class GStreamerCommandTests(unittest.TestCase):
 
         self.assertIn("device-index=0", popen.call_args.args[0])
 
+    def test_raw_stream_applies_requested_frame_rate_and_bitrate(self):
+        import ingestion
+
+        with patch("ingestion.subprocess.Popen") as popen:
+            ingestion.start_rtsp_stream("0", "camera0", "1280x720", framerate=24, bitrate="750k")
+
+        command = popen.call_args.args[0]
+        self.assertIn("video/x-raw,width=1280,height=720,framerate=24/1", command)
+        self.assertIn("bitrate=750", command)
+
     def test_bitrate_conversion_accepts_kilobits_and_megabits(self):
         from stream_settings import bitrate_to_kbps
 
@@ -104,6 +114,15 @@ class GStreamerCommandTests(unittest.TestCase):
         self.assertNotIn("shell", popen.call_args.kwargs)
         self.assertEqual(popen.call_args.kwargs["stdout"], subprocess.DEVNULL)
         self.assertEqual(popen.call_args.kwargs["stderr"], subprocess.DEVNULL)
+
+    def test_annotated_stream_applies_requested_bitrate(self):
+        fake_process = types.SimpleNamespace(stdin=types.SimpleNamespace(write=lambda data: None))
+        import streaming
+
+        with patch("streaming.subprocess.Popen", return_value=fake_process) as popen:
+            streaming.start_annotated_stream("annotated_camera1", 640, 480, bitrate="2M")
+
+        self.assertIn("bitrate=2000", popen.call_args.args[0])
 
 
 class StreamProcessLifecycleTests(unittest.TestCase):
