@@ -4,8 +4,35 @@ import numpy as np
 
 stream_processes = {}
 
+
+def _stop_process(proc):
+    """Close a pipeline cleanly, escalating only if it does not exit."""
+    if proc.stdin is not None:
+        try:
+            proc.stdin.close()
+        except OSError:
+            pass
+
+    if proc.poll() is None:
+        proc.terminate()
+        try:
+            proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait()
+
+
+def stop_annotated_stream(name):
+    """Stop and forget the GStreamer process associated with ``name``."""
+    proc = stream_processes.pop(name, None)
+    if proc is None:
+        return False
+    _stop_process(proc)
+    return True
+
+
 def start_annotated_stream(name, width, height, fps=25):
-    global stream_processes
+    stop_annotated_stream(name)
 
     command = [
         "gst-launch-1.0", "-v", "fdsrc", "fd=0", f"blocksize={width * height * 3}", "!",
@@ -15,7 +42,12 @@ def start_annotated_stream(name, width, height, fps=25):
     ]
 
     print(f"Starting annotated stream for {name} at rtsp://localhost:8554/{name}")
-    proc = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    proc = subprocess.Popen(
+        command,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
     stream_processes[name] = proc
     dummy = np.zeros((height, width, 3), dtype=np.uint8)
     rgb_dummy = cv2.cvtColor(dummy, cv2.COLOR_BGR2RGB)

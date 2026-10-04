@@ -4,7 +4,7 @@ import types
 import unittest
 from importlib.util import find_spec
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 
 SRC_DIR = Path(__file__).resolve().parents[1] / "src"
@@ -20,8 +20,14 @@ class StreamConfigValidationTests(unittest.TestCase):
     def setUpClass(cls):
         original_modules = {name: sys.modules.pop(name, None) for name in ("api", "analytics", "ingestion", "streaming")}
         sys.modules["analytics"] = types.SimpleNamespace(get_metrics=lambda: {})
-        sys.modules["ingestion"] = types.SimpleNamespace(start_rtsp_stream=lambda *args: None)
-        sys.modules["streaming"] = types.SimpleNamespace(start_annotated_stream=lambda *args: None)
+        sys.modules["ingestion"] = types.SimpleNamespace(
+            start_rtsp_stream=lambda *args: None,
+            stop_rtsp_stream=lambda *args: None,
+        )
+        sys.modules["streaming"] = types.SimpleNamespace(
+            start_annotated_stream=lambda *args: None,
+            stop_annotated_stream=lambda *args: None,
+        )
         import api
 
         cls.api = api
@@ -57,6 +63,16 @@ class GStreamerCommandTests(unittest.TestCase):
         self.assertIn("location=http://camera.local/feed?x=1&y=2", command)
         self.assertNotIn("shell", popen.call_args.kwargs)
         self.assertEqual(popen.call_args.kwargs["stdin"], subprocess.PIPE)
+        self.assertEqual(popen.call_args.kwargs["stdout"], subprocess.DEVNULL)
+        self.assertEqual(popen.call_args.kwargs["stderr"], subprocess.DEVNULL)
+
+    def test_ingestion_accepts_integer_local_camera_source(self):
+        import ingestion
+
+        with patch("ingestion.subprocess.Popen") as popen:
+            ingestion.start_rtsp_stream(0, "camera0", "1280x720", is_local=True)
+
+        self.assertIn("device-index=0", popen.call_args.args[0])
 
     def test_annotated_stream_uses_argument_list_without_shell(self):
         fake_process = types.SimpleNamespace(stdin=types.SimpleNamespace(write=lambda data: None))
@@ -74,6 +90,56 @@ class GStreamerCommandTests(unittest.TestCase):
 
         self.assertIsInstance(popen.call_args.args[0], list)
         self.assertNotIn("shell", popen.call_args.kwargs)
+        self.assertEqual(popen.call_args.kwargs["stdout"], subprocess.DEVNULL)
+        self.assertEqual(popen.call_args.kwargs["stderr"], subprocess.DEVNULL)
+
+
+class StreamProcessLifecycleTests(unittest.TestCase):
+    def _process(self):
+        return types.SimpleNamespace(
+            stdin=types.SimpleNamespace(close=lambda: None),
+            poll=lambda: None,
+            terminate=Mock(),
+            wait=Mock(),
+            kill=Mock(),
+        )
+
+    def test_stopping_annotated_stream_terminates_and_removes_process(self):
+        import streaming
+
+        process = self._process()
+        streaming.stream_processes["annotated_camera0"] = process
+
+        self.assertTrue(streaming.stop_annotated_stream("annotated_camera0"))
+        process.terminate.assert_called_once_with()
+        process.wait.assert_called_once_with(timeout=5)
+        self.assertNotIn("annotated_camera0", streaming.stream_processes)
+
+    def test_restarting_raw_stream_terminates_existing_process(self):
+        import ingestion
+
+        process = self._process()
+        ingestion.stream_processes["camera0"] = process
+        with patch("ingestion.subprocess.Popen") as popen:
+            popen.return_value = self._process()
+            ingestion.start_rtsp_stream("0", "camera0", "640x480")
+
+        process.terminate.assert_called_once_with()
+        self.assertIs(ingestion.stream_processes["camera0"], popen.return_value)
+
+@unittest.skipUnless(
+    find_spec("fastapi") is not None and find_spec("pydantic") is not None,
+    "FastAPI and Pydantic are required for API lifecycle tests",
+)
+class StreamStopEndpointTests(unittest.TestCase):
+    def test_stop_endpoint_stops_the_matching_pipeline(self):
+        api = StreamConfigValidationTests.api
+        api.streams["raw"] = {"camera0": {"status": "active"}}
+        with patch.object(api.ingestion, "stop_rtsp_stream") as stop_pipeline:
+            api.stop_stream("camera0", "raw")
+
+        stop_pipeline.assert_called_once_with("camera0")
+        self.assertEqual(api.streams["raw"]["camera0"]["status"], "inactive")
 
 
 if __name__ == "__main__":

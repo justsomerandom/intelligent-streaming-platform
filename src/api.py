@@ -82,6 +82,10 @@ def stop_stream(stream_name: str, stream_type: str):
         raise HTTPException(status_code=400, detail="Invalid stream type")
     if stream_name not in streams[stream_type]:
         raise HTTPException(status_code=404, detail="Stream not found")
+    if stream_type == "raw":
+        ingestion.stop_rtsp_stream(stream_name)
+    else:
+        streaming.stop_annotated_stream(stream_name)
     streams[stream_type][stream_name]["status"] = "inactive"
     return {"message": f"Stopped {stream_type} stream {stream_name}"}
 
