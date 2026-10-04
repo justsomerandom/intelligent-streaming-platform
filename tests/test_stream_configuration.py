@@ -74,6 +74,18 @@ class GStreamerCommandTests(unittest.TestCase):
 
         self.assertIn("device-index=0", popen.call_args.args[0])
 
+    def test_bitrate_conversion_accepts_kilobits_and_megabits(self):
+        from stream_settings import bitrate_to_kbps
+
+        self.assertEqual(bitrate_to_kbps("750k"), 750)
+        self.assertEqual(bitrate_to_kbps("2M"), 2000)
+
+    def test_bitrate_conversion_rejects_invalid_values(self):
+        from stream_settings import bitrate_to_kbps
+
+        with self.assertRaises(ValueError):
+            bitrate_to_kbps("fast")
+
     def test_annotated_stream_uses_argument_list_without_shell(self):
         fake_process = types.SimpleNamespace(stdin=types.SimpleNamespace(write=lambda data: None))
         fake_cv2 = types.SimpleNamespace(COLOR_BGR2RGB=1, cvtColor=lambda frame, code: frame)
