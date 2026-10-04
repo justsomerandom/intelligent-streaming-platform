@@ -1,12 +1,13 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, validator
 import subprocess
 import analytics
 import ingestion
 import streaming
 from typing import Optional
+import re
 
 app = FastAPI()
 
@@ -17,21 +18,35 @@ streams = {
 }
 analytics_metrics = {}
 
+RESOLUTION_PATTERN = re.compile(r"^[1-9]\d{0,4}x[1-9]\d{0,4}$")
+
 class StreamConfig(BaseModel):
     stream_name: str
     source: str | int
     type: str  # "raw" or "annotated"
     resolution: str = "640x480"
-    framerate: int = 30
+    framerate: int = Field(default=30, ge=1)
     bitrate: str = "1M"
     is_local: bool = False
+
+    @validator("resolution")
+    def validate_resolution(cls, value):
+        if not RESOLUTION_PATTERN.fullmatch(value):
+            raise ValueError("resolution must be WIDTHxHEIGHT with positive integer dimensions")
+        return value
 
 class StreamUpdate(BaseModel):
     stream_name: str
     stream_type: str  # "raw" or "annotated"
     resolution: Optional[str] = None
-    framerate: Optional[int] = None
+    framerate: Optional[int] = Field(default=None, ge=1)
     bitrate: Optional[str] = None
+
+    @validator("resolution")
+    def validate_resolution(cls, value):
+        if value is not None and not RESOLUTION_PATTERN.fullmatch(value):
+            raise ValueError("resolution must be WIDTHxHEIGHT with positive integer dimensions")
+        return value
 
 @app.get("/")
 def read_root():

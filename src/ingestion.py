@@ -11,38 +11,28 @@ def start_rtsp_stream(source, stream_name, resolution, is_local=True):
     if is_local:
         if source.startswith("/dev/video"):
             print(f"Starting RTSP stream for local device: {source}")
-            command = (
-                f'gst-launch-1.0 '
-                f'v4l2src device={source} '
-                f'! video/x-raw, width={resolution.split("x")[0]}, height={resolution.split("x")[1]} '
-                f'! videoconvert '
-                f'! x264enc tune=zerolatency '
-                f'! h264parse '
-                f'! rtspclientsink location={full_url}'
-            )
+            command = [
+                "gst-launch-1.0", "v4l2src", f"device={source}", "!",
+                f"video/x-raw,width={resolution.split('x')[0]},height={resolution.split('x')[1]}",
+                "!", "videoconvert", "!", "x264enc", "tune=zerolatency", "!",
+                "h264parse", "!", "rtspclientsink", f"location={full_url}",
+            ]
         else:
             print(f"Starting RTSP stream for local Windows video source: {source}")
-            command = (
-                f'gst-launch-1.0 '
-                f'mfvideosrc device-index={source} '
-                f'! video/x-raw, width={resolution.split("x")[0]}, height={resolution.split("x")[1]} '
-                f'! videoconvert '
-                f'! x264enc tune=zerolatency '
-                f'! h264parse '
-                f'! rtspclientsink location={full_url}'
-            )
+            command = [
+                "gst-launch-1.0", "mfvideosrc", f"device-index={source}", "!",
+                f"video/x-raw,width={resolution.split('x')[0]},height={resolution.split('x')[1]}",
+                "!", "videoconvert", "!", "x264enc", "tune=zerolatency", "!",
+                "h264parse", "!", "rtspclientsink", f"location={full_url}",
+            ]
     else:
         print(f"Starting RTSP stream for IP source: {source}")
-        command = (
-            f'gst-launch-1.0 '
-            f'souphttpsrc location={source} '
-            f'! video/x-raw, width={resolution.split("x")[0]}, height={resolution.split("x")[1]} '
-            f'! jpegdec '
-            f'! videoconvert '
-            f'! x264enc tune=zerolatency '
-            f'! h264parse '
-            f'! rtspclientsink location={full_url}'
-        )
+        command = [
+            "gst-launch-1.0", "souphttpsrc", f"location={source}", "!",
+            f"video/x-raw,width={resolution.split('x')[0]},height={resolution.split('x')[1]}",
+            "!", "jpegdec", "!", "videoconvert", "!", "x264enc", "tune=zerolatency",
+            "!", "h264parse", "!", "rtspclientsink", f"location={full_url}",
+        ]
     print(f"Starting RTSP stream: {full_url}")
-    subprocess.Popen(command, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return full_url
