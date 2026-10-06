@@ -2,26 +2,11 @@ import subprocess
 import cv2
 import threading
 from stream_settings import bitrate_to_kbps
+from stream_process import process_health, stop_process
 
 # Base RTSP URL
 rtsp_base_url = "rtsp://localhost:8554/"
 stream_processes = {}
-
-
-def _stop_process(proc):
-    if proc.stdin is not None:
-        try:
-            proc.stdin.close()
-        except OSError:
-            pass
-
-    if proc.poll() is None:
-        proc.terminate()
-        try:
-            proc.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            proc.kill()
-            proc.wait()
 
 
 def stop_rtsp_stream(stream_name):
@@ -29,8 +14,13 @@ def stop_rtsp_stream(stream_name):
     proc = stream_processes.pop(stream_name, None)
     if proc is None:
         return False
-    _stop_process(proc)
+    stop_process(proc)
     return True
+
+
+def get_rtsp_stream_health(stream_name):
+    """Return whether the named raw-stream pipeline is still alive."""
+    return process_health(stream_processes.get(stream_name))
 
 # Function to start an RTSP stream for each source
 def start_rtsp_stream(source, stream_name, resolution, is_local=True, framerate=30, bitrate="1M"):

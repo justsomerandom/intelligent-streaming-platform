@@ -2,25 +2,9 @@ import subprocess
 import cv2
 import numpy as np
 from stream_settings import bitrate_to_kbps
+from stream_process import process_health, stop_process
 
 stream_processes = {}
-
-
-def _stop_process(proc):
-    """Close a pipeline cleanly, escalating only if it does not exit."""
-    if proc.stdin is not None:
-        try:
-            proc.stdin.close()
-        except OSError:
-            pass
-
-    if proc.poll() is None:
-        proc.terminate()
-        try:
-            proc.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            proc.kill()
-            proc.wait()
 
 
 def stop_annotated_stream(name):
@@ -28,8 +12,13 @@ def stop_annotated_stream(name):
     proc = stream_processes.pop(name, None)
     if proc is None:
         return False
-    _stop_process(proc)
+    stop_process(proc)
     return True
+
+
+def get_annotated_stream_health(name):
+    """Return whether the named annotated-stream pipeline is still alive."""
+    return process_health(stream_processes.get(name))
 
 
 def start_annotated_stream(name, width, height, fps=25, bitrate="1M"):
